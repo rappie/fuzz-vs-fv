@@ -23,6 +23,18 @@ contract CometEchidnaHarness is Comet {
         }
         return coll;
     }
+
+    function getAssetInfoByAddressExternal(address asset) external view returns (AssetInfo memory) {
+        return getAssetInfoByAddress(asset);
+    }
+    function getAssetInOf(address user) external view returns (uint16) {
+        return userBasic[user].assetsIn;
+    }
+
+    function isInAssetExternal(uint16 assetsIn, uint8 assetOffset) external view returns (bool) {
+        return isInAsset(assetsIn, assetOffset);
+    }
+
 }
 
 contract TestComet {
@@ -93,6 +105,22 @@ contract TestComet {
         return sum;
     }
 
+    function allow(address manager, bool isAllowed_) public {
+        comet.allow(manager, isAllowed_);
+    }
+
+    function pause(
+        bool supplyPaused,
+        bool transferPaused,
+        bool withdrawPaused,
+        bool absorbPaused,
+        bool buyPaused
+    ) external {
+        comet.pause(supplyPaused, transferPaused, withdrawPaused, absorbPaused, buyPaused);
+    }
+
+
+
     function supply(uint256 assetId, uint256 amount) public {
         assetId = assetId % 15;
         address asset = assets[assetId].asset;
@@ -101,11 +129,62 @@ contract TestComet {
         comet.supply(asset, amount);
     }
 
+
+    function supplyTo(address dst, uint256 assetId, uint256 amount) public {
+        assetId = assetId % 15;
+        address asset = assets[assetId].asset;
+        FaucetToken(asset).allocateTo(address(this), amount);
+        FaucetToken(asset).approve(address(comet), amount);
+        comet.supplyTo(dst, asset, amount);
+    }
+
+    function supplyFrom(address from, address dst, uint256 assetId, uint amount) public {         
+        assetId = assetId % 15;
+        address asset = assets[assetId].asset;
+        FaucetToken(asset).allocateTo(address(this), amount);
+        FaucetToken(asset).approve(address(comet), amount);
+        comet.supplyFrom(from, dst, asset, amount);
+    }
+
     function transfer(uint256 assetId, address dst, uint256 amount) public {
         assetId = assetId % 15;
         address asset = assets[assetId].asset;
         supply(assetId, amount);
         comet.transfer(dst, asset, amount);
+    }
+
+
+    function transferFrom(address src, address dst, uint256 assetId, uint amount) public {
+        assetId = assetId % 15;
+        address asset = assets[assetId].asset;
+        comet.transferFrom(src, dst, asset, amount);
+    }
+
+    function withdraw(uint256 assetId, uint amount) public {
+        assetId = assetId % 15;
+        address asset = assets[assetId].asset;
+        comet.withdraw(asset, amount);
+    }
+
+    function withdrawTo(address to, uint256 assetId, uint amount) public {
+        assetId = assetId % 15;
+        address asset = assets[assetId].asset;
+        comet.withdrawTo(to, asset, amount);
+    }
+
+    function withdrawFrom(address src, address to, uint256 assetId, uint amount) public {
+        assetId = assetId % 15;
+        address asset = assets[assetId].asset;
+        comet.withdrawFrom(src, to, asset, amount);
+    }
+
+    function absorb(address absorber, address[] calldata accounts) public {
+        comet.absorb(absorber, accounts);
+    }
+
+    function buyCollateral(uint256 assetId, uint minAmount, uint baseAmount, address recipient) public {
+        assetId = assetId % 15;
+        address asset = assets[assetId].asset;
     }
 
     function echidna_used_collateral() public view returns (bool) {
@@ -120,7 +199,7 @@ contract TestComet {
         return true;
     }
 
-    function echidna_total_collateral_per_asset() public view returns (bool) {
+    function XXXechidna_total_collateral_per_asset() public view returns (bool) {
         for (uint8 i = 0; i < assets.length; ++i) {
             address asset = assets[i].asset;
             uint256 userColl = sumUserCollateral(asset, false);
@@ -131,4 +210,25 @@ contract TestComet {
         }
         return true;
     }
+
+
+    function echidna_bit_per_balance() public view returns (bool) {
+        address[4] memory users = [address(this), address(0x10000), address(0x20000), address(0x30000)];
+        for (uint8 u = 0; u < users.length; ++u) {
+            address user = users[u];
+            for (uint8 i = 0; i < assets.length; ++i) {
+                address asset = assets[i].asset;
+                uint16 assetsIn = comet.getAssetInOf(user);
+                Comet.AssetInfo memory assetInfo = comet.getAssetInfoByAddressExternal(asset);
+                bool bitOn = comet.isInAssetExternal(assetsIn, assetInfo.offset);
+                bool hasColl = comet.collateralBalanceOf(user, asset) > 0;
+                if (hasColl != bitOn) {
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+
+
 }

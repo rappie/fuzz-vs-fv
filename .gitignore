@@ -1,3 +1,10 @@
 crytic-export/
 
 .DS_Store
+
+
+#certroa
+**.certora_internal
+
+#echidna
+**corpus**
