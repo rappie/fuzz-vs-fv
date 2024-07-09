@@ -54,27 +54,3 @@ hook Sstore currentContract.ilks[KEY bytes32 ilk].(offset 32) uint256 newRate (u
 invariant fundamental_equation_of_dai()
    to_mathint(debt()) == to_mathint(vice() + sumOfVaultDebtGhost())
    filtered { f -> !f.isFallback }
-
-
-rule reach_step1(method f, bytes32 ilk) {
-    storage stepBefore = lastStorage; 
-    require ( to_mathint(debt()) == to_mathint(vice() + sumOfVaultDebtGhost()) );
-    env e;
-    calldataarg args;
-    grab(e,args);
-
-    storage beforeViolatingStep = lastStorage; 
-    requrie stepBefore[currentContract] !=  beforeViolatingStep[currentContract];
-    require ( to_mathint(debt()) == to_mathint(vice() + sumOfVaultDebtGhost()) );
-
-    env e1; calldataarg initArgs;
-    init(e,ilk);
-    require  ! (to_mathint(debt()) == to_mathint(vice() + sumOfVaultDebtGhost()) );
-
-    init@withrevert(e,ilk) at stepBefore;
-    require  lastreverted ||  (to_mathint(debt()) == to_mathint(vice() + sumOfVaultDebtGhost()) );
-
-
-    assert false;  
-
-}
