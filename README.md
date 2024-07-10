@@ -1,5 +1,5 @@
 
-THIS IS THE ORIGINAL README of the repo, for the comparasion to Certroa see:
+THIS IS THE ORIGINAL README of the repo, for the comparasion to FV see:
 https://github.com/Certora/fuzz-vs-fv-showdown/blob/master/README.md
 
 
