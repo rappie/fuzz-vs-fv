@@ -1,3 +1,9 @@
+## Description
+Run with
+```shell
+echidna . --contract TestComet --config config.yaml
+```
+
 ## Broken Invariant Sequence
 TODO
 
