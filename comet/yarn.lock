@@ -612,6 +612,11 @@
     "@types/sinon-chai" "^3.2.3"
     "@types/web3" "1.0.19"
 
+"@perimetersec/fuzzlib@^0.3.1":
+  version "0.3.1"
+  resolved "https://registry.yarnpkg.com/@perimetersec/fuzzlib/-/fuzzlib-0.3.1.tgz#307d896388b35bba2591bd2474027f4cdc2f1b0f"
+  integrity sha512-rfu1FBThYkNOkueSVbabEA7caF2d/EFLcjmyao1ufREXVgheplaThGMIVykAbLQlMJE8+eUkQ4rbUVnhykQKNg==
+
 "@resolver-engine/core@^0.3.3":
   version "0.3.3"
   resolved "https://registry.yarnpkg.com/@resolver-engine/core/-/core-0.3.3.tgz#590f77d85d45bc7ecc4e06c654f41345db6ca967"
