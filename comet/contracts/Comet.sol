@@ -915,7 +915,7 @@ contract Comet is CometMath, CometStorage {
      * @dev Whether user has a non-zero balance of an asset, given assetsIn flags
      */
     function isInAsset(uint16 assetsIn, uint8 assetOffset) internal pure returns (bool) {
-        return (assetsIn & (uint8(1) << assetOffset) != 0);
+        return (assetsIn & (uint16(1) << assetOffset) != 0);
     }
 
     /**
@@ -930,10 +930,10 @@ contract Comet is CometMath, CometStorage {
         AssetInfo memory assetInfo = getAssetInfoByAddress(asset);
         if (initialUserBalance == 0 && finalUserBalance != 0) {
             // set bit for asset
-            userBasic[account].assetsIn |= (uint8(1) << assetInfo.offset);
+            userBasic[account].assetsIn |= (uint16(1) << assetInfo.offset);
         } else if (initialUserBalance != 0 && finalUserBalance == 0) {
             // clear bit for asset
-            userBasic[account].assetsIn &= ~(uint8(1) << assetInfo.offset);
+            userBasic[account].assetsIn &= ~(uint16(1) << assetInfo.offset);
         }
     }
 
