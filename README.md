@@ -3,6 +3,7 @@ Link to [fuzzing code](https://github.com/rappie/fuzz-vs-fv/blob/main/comet/cont
 
 Run with
 ```shell
+cd comet
 echidna . --contract TestComet --config config.yaml
 ```
 
