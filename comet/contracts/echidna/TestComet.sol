@@ -156,7 +156,7 @@ contract TestComet is FuzzBase {
     }
 
     function test_bit_per_balance() public {
-        address[4] memory users = [address(0x10000), address(0x20000), address(0x30000)];
+        address[3] memory users = [address(0x10000), address(0x20000), address(0x30000)];
         for (uint8 u = 0; u < users.length; ++u) {
             address user = users[u];
             for (uint8 i = 0; i < assets.length; ++i) {
