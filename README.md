@@ -1,4 +1,6 @@
 ## Description
+Link to [fuzzing code](https://github.com/rappie/fuzz-vs-fv/blob/main/comet/contracts/echidna/TestComet.sol).
+
 Run with
 ```shell
 echidna . --contract TestComet --config config.yaml
