@@ -1,11 +1,10 @@
-deployer: "0x30000" 
+workers: 1
+symExec: false
+testMode: assertion
+
+corpusDir: echidna-corpus
+testLimit: 5000000000
+
+deployer: "0xfffff"
 sender: ["0x10000", "0x20000", "0x30000"]
-filterBlacklist: true
-filterFunctions: [
-  "FaucetToken.allocateTo(address,uint256)",
-  "FaucetToken.approveFrom(address,address,uint256)",
-  "SimplePriceFeed.setPrice(int256)"
-]
-corpusDir: "contracts/echidna/corpus"
-testLimit: 50000
-# allContracts: true
+

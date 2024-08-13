@@ -1,6 +1,9 @@
 // SPDX-License-Identifier: BUSL-1.1
 pragma solidity ^0.8.11;
 
+import "@perimetersec/fuzzlib/src/FuzzBase.sol";
+import "@perimetersec/fuzzlib/src/IHevm.sol";
+
 import "../Comet.sol";
 import "../test/FaucetToken.sol";
 import "../test/SimplePriceFeed.sol";
@@ -37,9 +40,27 @@ contract CometEchidnaHarness is Comet {
 
 }
 
-contract TestComet {
-    CometEchidnaHarness public comet;
-    Comet.AssetConfig[] public assets;
+contract TestComet is FuzzBase {
+    IHevm internal hevm = vm;
+
+    uint256 internal constant STARTING_BALANCE = 1_000_000 ether;
+    address internal currentActor;
+
+    address[] internal ACTORS = [
+        address(0x10000),
+        address(0x20000),
+        address(0x30000)
+    ];
+
+    modifier setCurrentActor() {
+        address previousActor = currentActor;
+        currentActor = msg.sender;
+        _;
+        currentActor = previousActor;
+    }
+
+    CometEchidnaHarness internal comet;
+    Comet.AssetConfig[] internal assets;
 
     constructor() {
         string[15] memory symbols = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O"];
@@ -60,10 +81,6 @@ contract TestComet {
                 liquidationFactor: 1e18,
                 supplyCap: uint128(1000000 * (10**decimals[i]))
             }));
-
-            token.allocateTo(address(0x10000), 1000000 * 10**decimals[i]);
-            token.allocateTo(address(0x20000), 1000000 * 10**decimals[i]);
-            token.allocateTo(address(0x30000), 1000000 * 10**decimals[i]);
         }
         
         Comet.Configuration memory config = Comet.Configuration({
@@ -87,132 +104,58 @@ contract TestComet {
 
         comet = new CometEchidnaHarness(config);
 
-        for (uint8 i=0; i<15; ++i) {
+        for (uint8 i = 0; i < 15; ++i) {
             token = FaucetToken(assets[i].asset);
-
-            token.approveFrom(address(0x10000), address(comet), 1000000 * 10**decimals[i]);
-            token.approveFrom(address(0x20000), address(comet), 1000000 * 10**decimals[i]);
-            token.approveFrom(address(0x30000), address(comet), 1000000 * 10**decimals[i]);
+            for(uint8 j = 0; j < ACTORS.length; ++j) {
+                address actor = ACTORS[j];
+                token.allocateTo(actor, STARTING_BALANCE);
+                token.approveFrom(actor, address(comet), type(uint256).max);
+            }
         }
     }
 
-    function sumUserCollateral(address asset, bool used) internal view returns (uint256) {
-        address[4] memory users = [address(this), address(0x10000), address(0x20000), address(0x30000)];
-        uint256 sum = 0;
-        for (uint8 i = 0; i < users.length; ++i) {
-            sum += comet.getUserCollateral(users[i], asset, used);
-        }
-        return sum;
+    function setPrice(uint256 assetId, uint256 price) public {
+        assetId = assetId % 15;
+        price = price % 100_000;
+        SimplePriceFeed(assets[assetId].priceFeed).setPrice(int(price));
     }
 
-    function allow(address manager, bool isAllowed_) public {
-        comet.allow(manager, isAllowed_);
-    }
-
-    function pause(
-        bool supplyPaused,
-        bool transferPaused,
-        bool withdrawPaused,
-        bool absorbPaused,
-        bool buyPaused
-    ) external {
-        comet.pause(supplyPaused, transferPaused, withdrawPaused, absorbPaused, buyPaused);
-    }
-
-
-
-    function supply(uint256 assetId, uint256 amount) public {
+    function supply(uint256 assetId, uint256 amount) public setCurrentActor {
         assetId = assetId % 15;
         address asset = assets[assetId].asset;
-        FaucetToken(asset).allocateTo(address(this), amount);
-        FaucetToken(asset).approve(address(comet), amount);
+
+        amount = fl.clamp(amount, 0, FaucetToken(asset).balanceOf(currentActor));
+
+        hevm.prank(currentActor);
         comet.supply(asset, amount);
     }
 
-
-    function supplyTo(address dst, uint256 assetId, uint256 amount) public {
+    function withdraw(uint256 assetId, uint amount) public setCurrentActor {
         assetId = assetId % 15;
         address asset = assets[assetId].asset;
-        FaucetToken(asset).allocateTo(address(this), amount);
-        FaucetToken(asset).approve(address(comet), amount);
-        comet.supplyTo(dst, asset, amount);
-    }
 
-    function supplyFrom(address from, address dst, uint256 assetId, uint amount) public {         
-        assetId = assetId % 15;
-        address asset = assets[assetId].asset;
-        FaucetToken(asset).allocateTo(address(this), amount);
-        FaucetToken(asset).approve(address(comet), amount);
-        comet.supplyFrom(from, dst, asset, amount);
-    }
+        amount = amount % STARTING_BALANCE;
 
-    function transfer(uint256 assetId, address dst, uint256 amount) public {
-        assetId = assetId % 15;
-        address asset = assets[assetId].asset;
-        supply(assetId, amount);
-        comet.transfer(dst, asset, amount);
-    }
-
-
-    function transferFrom(address src, address dst, uint256 assetId, uint amount) public {
-        assetId = assetId % 15;
-        address asset = assets[assetId].asset;
-        comet.transferFrom(src, dst, asset, amount);
-    }
-
-    function withdraw(uint256 assetId, uint amount) public {
-        assetId = assetId % 15;
-        address asset = assets[assetId].asset;
+        hevm.prank(currentActor);
         comet.withdraw(asset, amount);
     }
 
-    function withdrawTo(address to, uint256 assetId, uint amount) public {
-        assetId = assetId % 15;
-        address asset = assets[assetId].asset;
-        comet.withdrawTo(to, asset, amount);
+    function withdrawBaseToken(uint amount) public {
+        withdraw(0, amount);
     }
 
-    function withdrawFrom(address src, address to, uint256 assetId, uint amount) public {
-        assetId = assetId % 15;
-        address asset = assets[assetId].asset;
-        comet.withdrawFrom(src, to, asset, amount);
+    function absorb(uint8 targetIndex) public setCurrentActor {
+        targetIndex = uint8(fl.clamp(targetIndex, 0, ACTORS.length));
+        address target = ACTORS[targetIndex];
+
+        address[] memory accounts = new address[](1);
+        accounts[0] = target;
+
+        hevm.prank(currentActor);
+        comet.absorb(currentActor, accounts);
     }
 
-    function absorb(address absorber, address[] calldata accounts) public {
-        comet.absorb(absorber, accounts);
-    }
-
-    function buyCollateral(uint256 assetId, uint minAmount, uint baseAmount, address recipient) public {
-        assetId = assetId % 15;
-        address asset = assets[assetId].asset;
-    }
-
-    function echidna_used_collateral() public view returns (bool) {
-        for (uint8 i = 0; i < assets.length; ++i) {
-            address asset = assets[i].asset;
-            uint256 userColl = sumUserCollateral(asset, true);
-            uint256 totalColl = comet.getTotalCollateral(asset);
-            if (userColl != totalColl) {
-                return false;
-            }
-        }
-        return true;
-    }
-
-    function XXXechidna_total_collateral_per_asset() public view returns (bool) {
-        for (uint8 i = 0; i < assets.length; ++i) {
-            address asset = assets[i].asset;
-            uint256 userColl = sumUserCollateral(asset, false);
-            uint256 totalColl = comet.getTotalCollateral(asset);
-            if (userColl != totalColl) {
-                return false;
-            }
-        }
-        return true;
-    }
-
-
-    function echidna_bit_per_balance() public view returns (bool) {
+    function test_bit_per_balance() public {
         address[4] memory users = [address(this), address(0x10000), address(0x20000), address(0x30000)];
         for (uint8 u = 0; u < users.length; ++u) {
             address user = users[u];
@@ -223,12 +166,9 @@ contract TestComet {
                 bool bitOn = comet.isInAssetExternal(assetsIn, assetInfo.offset);
                 bool hasColl = comet.collateralBalanceOf(user, asset) > 0;
                 if (hasColl != bitOn) {
-                    return false;
+                    fl.t(false, "A userCollateral for a specific asset is greater than zero if and only if the corresponding flag is set");
                 }
             }
         }
-        return true;
     }
-
-
 }
