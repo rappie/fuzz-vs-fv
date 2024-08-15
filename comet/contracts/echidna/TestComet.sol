@@ -155,6 +155,40 @@ contract TestComet is FuzzBase {
         comet.absorb(currentActor, accounts);
     }
 
+    function supplyTo(uint8 dstIndex, uint256 assetId, uint256 amount) public setCurrentActor {
+        dstIndex = uint8(fl.clamp(dstIndex, 0, ACTORS.length));
+        address dst = ACTORS[dstIndex];
+
+        assetId = assetId % 15;
+        address asset = assets[assetId].asset;
+        
+        hevm.prank(currentActor);
+        comet.supplyTo(dst, asset, amount);
+    }
+
+    function transfer(uint8 assetId, uint8 dstIndex, uint256 amount) public setCurrentActor {
+        dstIndex = uint8(fl.clamp(dstIndex, 0, ACTORS.length));
+        address dst = ACTORS[dstIndex];
+
+        assetId = assetId % 15;
+        address asset = assets[assetId].asset;
+        supply(assetId, amount);
+
+        hevm.prank(currentActor);
+        comet.transfer(dst, asset, amount);
+    }
+
+    function withdrawTo(uint8 toIndex, uint8 assetId, uint amount) public setCurrentActor {
+        toIndex = uint8(fl.clamp(toIndex, 0, ACTORS.length));
+        address to = ACTORS[toIndex];
+
+        assetId = assetId % 15;
+        address asset = assets[assetId].asset;
+
+        hevm.prank(currentActor);
+        comet.withdrawTo(to, asset, amount);
+    }
+
     function test_bit_per_balance() public {
         address[3] memory users = [address(0x10000), address(0x20000), address(0x30000)];
         for (uint8 u = 0; u < users.length; ++u) {

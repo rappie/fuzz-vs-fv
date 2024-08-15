@@ -1,6 +1,21 @@
 ## Description
+The purpose of this repository is to demonstrate that fuzzing is easily able to catch the bug mentioned [here](https://x.com/CertoraInc/status/1821588677111521380) with the invariant mentioned [here](https://x.com/CertoraInc/status/1821588670966841439).
+
 Link to [fuzzing code](https://github.com/rappie/fuzz-vs-fv/blob/main/comet/contracts/echidna/TestComet.sol).
 
+## Changes to the Fuzzing Suite
+- Added function to fuzz price feed in order to allow `absorb` pass
+- Introduced actors to significantly boost fuzzing efficiency
+- Removed fuzzing repeat functionality
+- Clamp transfer ERC20 token amounts to not exceed user balances
+
+## Prerequisites
+
+1. Install Echidna, follow the steps here: [Installation Guide](https://github.com/crytic/echidna#installation) using the latest master branch
+
+2. Install dependencies with `yarn install`
+
+## Instructions
 Run with
 ```shell
 cd comet
@@ -11,12 +26,12 @@ echidna . --contract TestComet --config config.yaml
 ```
 test_bit_per_balance(): failed!💥
   Call sequence:
-    TestComet.supply(200,50951813222152630737590487381018564843764524130739086414974981058828678027319) from: 0x0000000000000000000000000000000000020000 Time delay: 601194 seconds Block delay: 60248
-    TestComet.supply(60,115792089237316195423570985008687907853269984665640564039457584007913129639920) from: 0x0000000000000000000000000000000000010000 Time delay: 8 seconds Block delay: 9993
-    TestComet.withdrawBaseToken(1099511627777) from: 0x0000000000000000000000000000000000020000 Time delay: 1700 seconds Block delay: 25831
-    TestComet.setPrice(4370000,55944602810487043503190486917892490700392004581638913031223401667803164203943) from: 0x0000000000000000000000000000000000010000 Time delay: 114541 seconds Block delay: 193
-    TestComet.absorb(17) from: 0x0000000000000000000000000000000000010000 Time delay: 478623 seconds Block delay: 3623
-    TestComet.test_bit_per_balance() from: 0x0000000000000000000000000000000000010000 Time delay: 47 seconds Block delay: 254
+    TestComet.supply(33599713855354106078310737180879058197,334849891882189)
+    TestComet.supplyTo(1,188910566290528870039435775673750114489269716245,1002095)
+    TestComet.withdrawBaseToken(1000144)
+    TestComet.setPrice(2,0)
+    TestComet.absorb(0)
+    TestComet.test_bit_per_balance()
 ```
 
 ## Original Readme
